@@ -371,15 +371,36 @@ def actualizar_estado_mascota(id_mascota: int, datos: MascotaUpdateEstado):
     raise HTTPException(status_code=404, detail=f"Mascota con ID {id_mascota} no encontrada.")
 
 @app.post("/reset", tags=["Mantenimiento"])
+@app.post("/mascotas/reset", tags=["Mantenimiento"])
 def reiniciar_datos():
     """
-    Ruta para reiniciar los datos de demostración en memoria.
+    Ruta para reiniciar los datos de demostración en Supabase y en memoria.
     """
     global STORE_MASCOTAS
-    # Reinicia a los valores iniciales
     STORE_MASCOTAS[0]["estado"] = "disponible"
     STORE_MASCOTAS[1]["estado"] = "disponible"
     STORE_MASCOTAS[2]["estado"] = "disponible"
     STORE_MASCOTAS[3]["estado"] = "en_proceso"
     STORE_MASCOTAS[4]["estado"] = "adoptada"
+
+    conexion = obtener_conexion()
+    if conexion:
+        cursor = None
+        try:
+            cursor = conexion.cursor()
+            cursor.execute("UPDATE mascotas.mascotas SET estado = 'disponible' WHERE id IN (1, 2, 3);")
+            cursor.execute("UPDATE mascotas.mascotas SET estado = 'en_proceso' WHERE id = 4;")
+            cursor.execute("UPDATE mascotas.mascotas SET estado = 'adoptada' WHERE id = 5;")
+            cursor.execute("DELETE FROM mascotas.mascotas WHERE id > 5;")
+            cursor.execute("UPDATE adopciones.solicitudes SET estado = 'aprobada' WHERE id = 1;")
+            cursor.execute("UPDATE adopciones.solicitudes SET estado = 'pendiente', fecha_resolucion = NULL WHERE id IN (2, 3);")
+            cursor.execute("DELETE FROM adopciones.solicitudes WHERE id > 3;")
+            conexion.commit()
+        except Exception:
+            if conexion: conexion.rollback()
+        finally:
+            if cursor: cursor.close()
+            conexion.close()
+
     return {"mensaje": "Datos de mascotas reiniciados correctamente"}
+

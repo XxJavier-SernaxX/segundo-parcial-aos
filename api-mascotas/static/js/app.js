@@ -50,7 +50,19 @@ function configurarNavegacionTabs() {
     const tabs = document.querySelectorAll('.nav-tab');
     const secciones = document.querySelectorAll('.tab-contenido');
 
+    // Enlace del topbar a Swagger / Arquitectura
+    document.querySelectorAll('.link-doc, a[href="#swagger-section"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tabArqui = document.querySelector('[data-tab="tab-arquitectura"]');
+            if (tabArqui) tabArqui.click();
+            const el = document.getElementById('swagger-section') || document.querySelector('.card-swagger');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+
     tabs.forEach(tab => {
+
         tab.addEventListener('click', () => {
             const tabTarget = tab.getAttribute('data-tab');
 
@@ -638,16 +650,23 @@ function configurarBotonReset() {
         if (!ok) return;
 
         try {
-            await fetch(`${API_MASCOTAS_BASE}/reset`, { method: 'POST' }).catch(() => {});
-            await fetch(`${API_ADOPCIONES_BASE}/reset`, { method: 'POST' }).catch(() => {});
-            mostrarAlerta('🔄 Datos de demostración reiniciados con éxito.', 'exito');
+            mostrarAlerta('⏳ Reiniciando datos en Supabase y microservicios...', 'info');
+            const urlResetMascotas = isLocal ? 'http://127.0.0.1:8001/reset' : `${window.location.origin}/mascotas/reset`;
+            const urlResetAdopciones = isLocal ? 'http://127.0.0.1:8002/reset' : `${window.location.origin}/solicitudes/reset`;
+
+            await fetch(urlResetMascotas, { method: 'POST' }).catch(() => {});
+            await fetch(urlResetAdopciones, { method: 'POST' }).catch(() => {});
+
+            mostrarAlerta('🔄 ¡Datos de demostración reiniciados con éxito!', 'exito');
             await cargarMascotas();
             await cargarSolicitudes();
         } catch (e) {
             console.error('Error al reiniciar datos:', e);
+            mostrarAlerta(`Error al reiniciar: ${e.message}`, 'error');
         }
     });
 }
+
 
 // =============================================================================
 // NOTIFICACIONES FLOTANTES (ALERTAS)
