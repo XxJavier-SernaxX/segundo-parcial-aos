@@ -26,6 +26,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import JSONResponse
+
+@app.get("/solicitudes/docs", include_in_schema=False)
+def swagger_ui_solicitudes():
+    return get_swagger_ui_html(openapi_url="/solicitudes/openapi.json", title="API 2 · Adopciones - Swagger UI")
+
+@app.get("/solicitudes/openapi.json", include_in_schema=False)
+def openapi_solicitudes():
+    return JSONResponse(app.openapi())
+
+
 # ==============================================================================
 # MODELOS PYDANTIC
 # ==============================================================================

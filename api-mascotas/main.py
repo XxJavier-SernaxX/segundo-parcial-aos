@@ -22,6 +22,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import JSONResponse
+
+@app.get("/mascotas/docs", include_in_schema=False)
+def swagger_ui_mascotas():
+    return get_swagger_ui_html(openapi_url="/mascotas/openapi.json", title="API 1 · Mascotas - Swagger UI")
+
+@app.get("/mascotas/openapi.json", include_in_schema=False)
+def openapi_mascotas():
+    return JSONResponse(app.openapi())
+
+
 # ==============================================================================
 # MODELOS PYDANTIC
 # ==============================================================================

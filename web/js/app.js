@@ -29,6 +29,14 @@ document.addEventListener('DOMContentLoaded', () => {
     configurarConsolaEndpoints();
     configurarBotonReset();
 
+    // Enlaces dinámicos de Swagger para despliegue en Vercel
+    if (!isLocal) {
+        const swMascotas = document.getElementById('link-swagger-mascotas');
+        const swAdopciones = document.getElementById('link-swagger-adopciones');
+        if (swMascotas) swMascotas.href = `${window.location.origin}/mascotas/docs`;
+        if (swAdopciones) swAdopciones.href = `${window.location.origin}/solicitudes/docs`;
+    }
+
     // Comprobación de salud de los microservicios y carga inicial de datos
     verificarSaludMicroservicios();
     cargarMascotas();

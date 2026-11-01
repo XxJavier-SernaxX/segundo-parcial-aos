@@ -1,55 +1,71 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api-mascotas/main.py",
-      "use": "@vercel/python"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "api-adopciones": {
+      "root": "api-adopciones",
+      "framework": "fastapi",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "api-mascotas",
+          "format": "url",
+          "env": "API_MASCOTAS_URL"
+        }
+      ]
     },
-    {
-      "src": "api-adopciones/main.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "web/**",
-      "use": "@vercel/static"
+    "api-mascotas": {
+      "root": "api-mascotas",
+      "framework": "fastapi"
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/api/v1/mascotas/(.*)",
-      "dest": "api-mascotas/main.py"
+      "source": "/mascotas",
+      "destination": {
+        "service": "api-mascotas"
+      }
     },
     {
-      "src": "/api/v1/mascotas",
-      "dest": "api-mascotas/main.py"
+      "source": "/mascotas/(.*)",
+      "destination": {
+        "service": "api-mascotas"
+      }
     },
     {
-      "src": "/mascotas/(.*)",
-      "dest": "api-mascotas/main.py"
+      "source": "/api/v1/mascotas",
+      "destination": {
+        "service": "api-mascotas"
+      }
     },
     {
-      "src": "/mascotas",
-      "dest": "api-mascotas/main.py"
+      "source": "/api/v1/mascotas/(.*)",
+      "destination": {
+        "service": "api-mascotas"
+      }
     },
     {
-      "src": "/api/v1/adopciones/(.*)",
-      "dest": "api-adopciones/main.py"
+      "source": "/solicitudes",
+      "destination": {
+        "service": "api-adopciones"
+      }
     },
     {
-      "src": "/api/v1/adopciones",
-      "dest": "api-adopciones/main.py"
+      "source": "/solicitudes/(.*)",
+      "destination": {
+        "service": "api-adopciones"
+      }
     },
     {
-      "src": "/solicitudes/(.*)",
-      "dest": "api-adopciones/main.py"
+      "source": "/api/v1/adopciones",
+      "destination": {
+        "service": "api-adopciones"
+      }
     },
     {
-      "src": "/solicitudes",
-      "dest": "api-adopciones/main.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "web/$1"
+      "source": "/api/v1/adopciones/(.*)",
+      "destination": {
+        "service": "api-adopciones"
+      }
     }
   ]
 }
