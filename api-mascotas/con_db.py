@@ -1,7 +1,11 @@
 import os
 import psycopg2
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def obtener_conexion():
+
     """
     Establece conexión con la base de datos PostgreSQL en Supabase.
     Retorna la conexión activa o None si no hay credenciales configuradas.
