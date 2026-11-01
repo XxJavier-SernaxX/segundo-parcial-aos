@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Plataforma de adopción responsable de mascotas - Fundación Huellas de Esperanza">
+    <title>Huellas de Esperanza · Adopción Responsable de Mascotas</title>
+    <!-- Hoja de estilos externa -->
+    <link rel="stylesheet" href="css/estilos.css">
+    <!-- Iconos Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Lógica de la aplicación -->
+    <script src="js/app.js" defer></script>
+</head>
+<body>
+    <!-- Topbar Estado Microservicios SOA -->
+    <aside class="topbar-soa">
+        <div class="contenedor topbar-contenido">
+            <div class="estado-servicios">
+                <span class="etiqueta-soa"><i class="ph-bold ph-git-network"></i> Arquitectura SOA:</span>
+                <span class="badge-online"><span class="punto-verde"></span> API 1 (Mascotas): <strong id="status-api-mascotas">ONLINE</strong></span>
+                <span class="badge-online"><span class="punto-verde"></span> API 2 (Adopciones): <strong id="status-api-adopciones">ONLINE</strong></span>
+            </div>
+            <div class="enlaces-docs">
+                <a href="#swagger-section" class="link-doc"><i class="ph-bold ph-book-open"></i> Swagger / OpenAPI</a>
+                <span class="separador">|</span>
+                <button id="btn-reset-demo" class="btn-link" title="Reiniciar datos semilla de demostración"><i class="ph-bold ph-arrow-counter-clockwise"></i> Reiniciar Datos Demo</button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="contenedor">
+        <!-- Encabezado Principal -->
+        <header class="encabezado">
+            <div class="encabezado-brand">
+                <div class="logo-icono"><i class="ph-fill ph-paw-print"></i></div>
+                <div>
+                    <h1>Huellas de Esperanza</h1>
+                    <p class="subtitulo">Plataforma Web de Adopción Responsable de Mascotas · UFPS</p>
+                </div>
+            </div>
+            <nav class="navegacion-principal">
+                <button class="nav-tab activa" data-tab="tab-mascotas"><i class="ph-bold ph-dog"></i> Mascotas en Adopción</button>
+                <button class="nav-tab" data-tab="tab-solicitudes"><i class="ph-bold ph-clipboard-text"></i> Gestión de Solicitudes</button>
+                <button class="nav-tab" data-tab="tab-arquitectura"><i class="ph-bold ph-tree-structure"></i> Arquitectura SOA & Swagger</button>
+            </nav>
+        </header>
+
+        <!-- Mensajes Globales -->
+        <div id="alerta-global" class="alerta oculta"></div>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="contenido-principal">
+
+            <!-- ============================================================ -->
+            <!-- PESTAÑA 1: CATÁLOGO DE MASCOTAS (API 1) -->
+            <!-- ============================================================ -->
+            <section id="tab-mascotas" class="tab-contenido activa">
+                <!-- Filtros y Acciones -->
+                <div class="barra-acciones">
+                    <div class="filtros-grupo">
+                        <label for="filtro-estado"><i class="ph-bold ph-funnel"></i> Estado:</label>
+                        <select id="filtro-estado">
+                            <option value="">Todos los estados</option>
+                            <option value="disponible" selected>Solo Disponibles</option>
+                            <option value="en_proceso">En Proceso</option>
+                            <option value="adoptada">Ya Adoptadas</option>
+                        </select>
+
+                        <label for="filtro-especie">Especie:</label>
+                        <select id="filtro-especie">
+                            <option value="">Todas</option>
+                            <option value="Perro">Perros</option>
+                            <option value="Gato">Gatos</option>
+                        </select>
+                    </div>
+
+                    <div class="botones-derecha">
+                        <button id="btn-refrescar-mascotas" class="btn btn-secundario"><i class="ph-bold ph-arrows-clockwise"></i> Actualizar</button>
+                        <button id="btn-abrir-modal-mascota" class="btn btn-primario"><i class="ph-bold ph-plus-circle"></i> Registrar Mascota</button>
+                    </div>
+                </div>
+
+                <!-- Grid de Tarjetas de Mascotas -->
+                <div id="grid-mascotas" class="grid-mascotas">
+                    <div class="cargando">Cargando catálogo de mascotas desde API 1...</div>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- PESTAÑA 2: GESTIÓN DE SOLICITUDES (API 2 <-> API 1) -->
+            <!-- ============================================================ -->
+            <section id="tab-solicitudes" class="tab-contenido">
+                <div class="barra-acciones">
+                    <div>
+                        <h2>Solicitudes de Adopción Registradas</h2>
+                        <p class="texto-ayuda">Administra las solicitudes, evalúa solicitantes y aprueba o rechaza con verificación inter-servicio.</p>
+                    </div>
+                    <button id="btn-refrescar-solicitudes" class="btn btn-secundario"><i class="ph-bold ph-arrows-clockwise"></i> Actualizar Solicitudes</button>
+                </div>
+
+                <!-- Banner explicativo de la regla de oro -->
+                <div class="banner-info">
+                    <i class="ph-fill ph-info"></i>
+                    <div>
+                        <strong>Regla de negocio obligatoria del examen:</strong> Al hacer clic en <strong>Aprobar</strong>, la <strong>API 2 (Adopciones)</strong> verifica que la mascota no tenga otra adopción aprobada previamente y realiza una petición HTTP <code>PATCH</code> a la <strong>API 1 (Mascotas)</strong> para marcarla como <code>adoptada</code>.
+                    </div>
+                </div>
+
+                <!-- Tabla de Solicitudes -->
+                <div class="tabla-contenedor">
+                    <table class="tabla-estilizada" id="tabla-solicitudes">
+                        <thead>
+                            <tr>
+                                <th># ID</th>
+                                <th>Mascota</th>
+                                <th>Solicitante</th>
+                                <th>Contacto / Vivienda</th>
+                                <th>Motivo de Adopción</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Acciones SOA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-solicitudes">
+                            <tr><td colspan="8" class="texto-centro">Cargando solicitudes...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ============================================================ -->
+            <!-- PESTAÑA 3: ARQUITECTURA SOA & SWAGGER INTERACTIVO -->
+            <!-- ============================================================ -->
+            <section id="tab-arquitectura" class="tab-contenido" id="swagger-section">
+                <!-- Diagrama Visual -->
+                <div class="card-arquitectura">
+                    <h2><i class="ph-bold ph-tree-structure"></i> Diagrama de Arquitectura Orientada a Servicios</h2>
+                    <p class="texto-ayuda">Separación estricta de responsabilidades entre dos APIs independientes en FastAPI y persistencia en Supabase.</p>
+
+                    <div class="diagrama-cajas">
+                        <div class="caja-diagrama caja-frontend">
+                            <span class="badge-caja">Capa de Presentación</span>
+                            <h3><i class="ph-bold ph-browsers"></i> Frontend Web (HTML5 + CSS3 + JS)</h3>
+                            <p>Consulta mascotas disponibles, registra solicitudes y gestiona resoluciones de adopción.</p>
+                        </div>
+
+                        <div class="flechas-comunicacion">
+                            <span>↓ REST / HTTP (JSON)</span>
+                            <span>↓ REST / HTTP (JSON)</span>
+                        </div>
+
+                        <div class="grid-servicios">
+                            <div class="caja-diagrama caja-servicio">
+                                <span class="badge-caja">API 1 · Principal (Puerto 8001)</span>
+                                <h3><i class="ph-bold ph-paw-print"></i> Servicio de Mascotas (FastAPI)</h3>
+                                <p>Administra registro, catálogo y disponibilidad de animales.</p>
+                                <span class="tag-endpoints">GET /mascotas • GET /mascotas/{id} • PATCH /mascotas/{id}/estado</span>
+                            </div>
+
+                            <div class="flecha-inter-servicio">
+                                <strong>REST HTTP Sincrónico ⇄</strong>
+                                <small>1. Valida disponibilidad</small>
+                                <small>2. Notifica estado 'adoptada'</small>
+                            </div>
+
+                            <div class="caja-diagrama caja-servicio">
+                                <span class="badge-caja">API 2 · Complementaria (Puerto 8002)</span>
+                                <h3><i class="ph-bold ph-heart"></i> Servicio de Adopciones (FastAPI)</h3>
+                                <p>Registra solicitantes y gestiona el flujo de aprobación/rechazo.</p>
+                                <span class="tag-endpoints">GET /solicitudes • POST /solicitudes • PATCH /solicitudes/{id}/resolucion</span>
+                            </div>
+                        </div>
+
+                        <div class="flechas-comunicacion">
+                            <span>↓ SQL (Esquema mascotas)</span>
+                            <span>↓ SQL (Esquema adopciones)</span>
+                        </div>
+
+                        <div class="caja-diagrama caja-bd">
+                            <span class="badge-caja">Persistencia en la Nube</span>
+                            <h3><i class="ph-bold ph-database"></i> PostgreSQL en Supabase</h3>
+                            <p>Esquemas independientes (<code>mascotas</code> y <code>adopciones</code>) sin joins físicos entre sí. Políticas RLS activas.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documentación Swagger Oficial -->
+                <div class="card-swagger">
+                    <h2><i class="ph-bold ph-book-open"></i> Documentación Swagger UI / OpenAPI Oficial</h2>
+                    <p class="texto-ayuda">Cada microservicio cuenta con su propia documentación OpenAPI interactiva generada por FastAPI:</p>
+
+                    <div class="grid-swagger-enlaces">
+                        <div class="item-swagger">
+                            <h4>API 1 · Servicio de Mascotas</h4>
+                            <p>Especificación Swagger para gestión de animales y disponibilidad.</p>
+                            <a id="link-swagger-mascotas" href="http://127.0.0.1:8001/docs" target="_blank" class="btn btn-swagger"><i class="ph-bold ph-arrow-square-out"></i> Abrir Swagger API 1 (/docs)</a>
+                        </div>
+
+                        <div class="item-swagger">
+                            <h4>API 2 · Servicio de Adopciones</h4>
+                            <p>Especificación Swagger para gestión de solicitudes y validación inter-servicio.</p>
+                            <a id="link-swagger-adopciones" href="http://127.0.0.1:8002/docs" target="_blank" class="btn btn-swagger"><i class="ph-bold ph-arrow-square-out"></i> Abrir Swagger API 2 (/docs)</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Consola Interactiva de Pruebas de Endpoints -->
+                <div class="card-consola">
+                    <h2><i class="ph-bold ph-terminal-window"></i> Consola Interactiva de Endpoints en Vivo</h2>
+                    <p class="texto-ayuda">Prueba las respuestas JSON en tiempo real directamente desde el navegador:</p>
+
+                    <div class="consola-barra">
+                        <select id="consola-metodo">
+                            <option value="GET">GET</option>
+                        </select>
+                        <select id="consola-endpoint">
+                            <option value="/api/v1/mascotas/mascotas">API 1: Listar todas las mascotas (GET /mascotas)</option>
+                            <option value="/api/v1/mascotas/mascotas/1">API 1: Consultar detalle de mascota #1 (GET /mascotas/1)</option>
+                            <option value="/api/v1/adopciones/solicitudes">API 2: Listar solicitudes de adopción (GET /solicitudes)</option>
+                            <option value="/api/v1/adopciones/solicitudes/1">API 2: Consultar solicitud #1 (GET /solicitudes/1)</option>
+                        </select>
+                        <button id="btn-consola-ejecutar" class="btn btn-primario"><i class="ph-bold ph-play"></i> Ejecutar Petición</button>
+                    </div>
+
+                    <div class="consola-resultado">
+                        <div class="consola-header">
+                            <span>Respuesta HTTP: <strong id="consola-status">-</strong></span>
+                            <span id="consola-tiempo">0 ms</span>
+                        </div>
+                        <pre id="consola-json">Haz clic en "Ejecutar Petición" para consultar el microservicio...</pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- PIE DE PÁGINA -->
+        <footer class="pie-pagina">
+            <p><strong>Fundación Huellas de Esperanza</strong> · Examen 2: Arquitectura Orientada a Servicios (SOA)</p>
+            <p class="creditos">Universidad Francisco de Paula Santander · Cúcuta, Colombia · Noviembre 2026</p>
+        </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL 1: FORMULARIO DE ADOPCIÓN (Invoca a API 2 con validación API 1) -->
+    <!-- ============================================================ -->
+    <div id="modal-adopcion" class="modal-overlay oculta">
+        <div class="modal-caja">
+            <div class="modal-header">
+                <h3><i class="ph-bold ph-heart"></i> Solicitar Adopción Responsable</h3>
+                <button class="btn-cerrar-modal" data-modal="modal-adopcion">&times;</button>
+            </div>
+            <form id="form-solicitud-adopcion">
+                <input type="hidden" id="adopcion-mascota-id">
+                
+                <div class="mascota-seleccionada-card" id="card-mascota-resumen">
+                    <!-- Resumen dinámico de la mascota elegida -->
+                </div>
+
+                <h4>1. Datos del Solicitante</h4>
+                <div class="grid-form">
+                    <div class="campo">
+                        <label for="sol-documento">Documento de Identidad *</label>
+                        <input type="text" id="sol-documento" required placeholder="Ej: 1090123456">
+                    </div>
+                    <div class="campo">
+                        <label for="sol-nombre">Nombre Completo *</label>
+                        <input type="text" id="sol-nombre" required placeholder="Ej: María Fernanda Gómez">
+                    </div>
+                    <div class="campo">
+                        <label for="sol-correo">Correo Electrónico *</label>
+                        <input type="email" id="sol-correo" required placeholder="correo@ejemplo.com">
+                    </div>
+                    <div class="campo">
+                        <label for="sol-telefono">Teléfono / WhatsApp *</label>
+                        <input type="tel" id="sol-telefono" required placeholder="Ej: 3124567890">
+                    </div>
+                    <div class="campo ancho-completo">
+                        <label for="sol-direccion">Dirección de Residencia *</label>
+                        <input type="text" id="sol-direccion" required placeholder="Calle 10 # 5-20, Barrio Caobos">
+                    </div>
+                    <div class="campo">
+                        <label for="sol-tipo-vivienda">Tipo de Vivienda</label>
+                        <select id="sol-tipo-vivienda">
+                            <option value="Casa">Casa</option>
+                            <option value="Apartamento">Apartamento</option>
+                            <option value="Finca">Finca / Parcela</option>
+                        </select>
+                    </div>
+                    <div class="campo checkbox-campo">
+                        <label>
+                            <input type="checkbox" id="sol-tiene-patio" checked> ¿Cuenta con patio o zona verde cercada?
+                        </label>
+                    </div>
+                </div>
+
+                <h4>2. Compromiso y Motivación</h4>
+                <div class="campo ancho-completo">
+                    <label for="sol-motivo">¿Por qué deseas adoptar esta mascota y qué cuidados le brindarás? *</label>
+                    <textarea id="sol-motivo" rows="3" required placeholder="Describe tu experiencia previa con mascotas, tiempo disponible para paseos y compromiso con su bienestar..."></textarea>
+                </div>
+
+                <div class="modal-acciones">
+                    <button type="button" class="btn btn-secundario btn-cerrar-modal" data-modal="modal-adopcion">Cancelar</button>
+                    <button type="submit" class="btn btn-primario" id="btn-enviar-adopcion"><i class="ph-bold ph-paper-plane-right"></i> Enviar Solicitud (API 2)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL 2: REGISTRO DE NUEVA MASCOTA (Invoca a API 1) -->
+    <!-- ============================================================ -->
+    <div id="modal-nueva-mascota" class="modal-overlay oculta">
+        <div class="modal-caja">
+            <div class="modal-header">
+                <h3><i class="ph-bold ph-plus-circle"></i> Registrar Nueva Mascota (API 1: Mascotas)</h3>
+                <button class="btn-cerrar-modal" data-modal="modal-nueva-mascota">&times;</button>
+            </div>
+            <form id="form-nueva-mascota">
+                <div class="grid-form">
+                    <div class="campo">
+                        <label for="m-nombre">Nombre de la Mascota *</label>
+                        <input type="text" id="m-nombre" required placeholder="Ej: Toby">
+                    </div>
+                    <div class="campo">
+                        <label for="m-especie">Especie *</label>
+                        <select id="m-especie" required>
+                            <option value="Perro">Perro</option>
+                            <option value="Gato">Gato</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="m-raza">Raza</label>
+                        <input type="text" id="m-raza" placeholder="Ej: Criollo / Mestizo" value="Mestizo">
+                    </div>
+                    <div class="campo">
+                        <label for="m-edad">Edad aproximada (meses) *</label>
+                        <input type="number" id="m-edad" min="1" max="240" required placeholder="Ej: 12" value="12">
+                    </div>
+                    <div class="campo">
+                        <label for="m-sexo">Sexo *</label>
+                        <select id="m-sexo" required>
+                            <option value="Macho">Macho</option>
+                            <option value="Hembra">Hembra</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="m-tamano">Tamaño *</label>
+                        <select id="m-tamano" required>
+                            <option value="Pequeno">Pequeño</option>
+                            <option value="Mediano" selected>Mediano</option>
+                            <option value="Grande">Grande</option>
+                        </select>
+                    </div>
+                    <div class="campo ancho-completo">
+                        <label for="m-foto">URL de la Fotografía</label>
+                        <input type="url" id="m-foto" placeholder="https://ejemplo.com/foto.jpg" value="https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80">
+                    </div>
+                    <div class="campo ancho-completo">
+                        <label for="m-descripcion">Descripción y Personalidad</label>
+                        <textarea id="m-descripcion" rows="2" placeholder="Temperamento, vacunas, historia de rescate..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-acciones">
+                    <button type="button" class="btn btn-secundario btn-cerrar-modal" data-modal="modal-nueva-mascota">Cancelar</button>
+                    <button type="submit" class="btn btn-primario"><i class="ph-bold ph-floppy-disk"></i> Guardar Mascota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

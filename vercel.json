@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api-mascotas/main.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api-adopciones/main.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "web/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/v1/mascotas/(.*)",
+      "dest": "api-mascotas/main.py"
+    },
+    {
+      "src": "/api/v1/mascotas",
+      "dest": "api-mascotas/main.py"
+    },
+    {
+      "src": "/mascotas/(.*)",
+      "dest": "api-mascotas/main.py"
+    },
+    {
+      "src": "/mascotas",
+      "dest": "api-mascotas/main.py"
+    },
+    {
+      "src": "/api/v1/adopciones/(.*)",
+      "dest": "api-adopciones/main.py"
+    },
+    {
+      "src": "/api/v1/adopciones",
+      "dest": "api-adopciones/main.py"
+    },
+    {
+      "src": "/solicitudes/(.*)",
+      "dest": "api-adopciones/main.py"
+    },
+    {
+      "src": "/solicitudes",
+      "dest": "api-adopciones/main.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "web/$1"
+    }
+  ]
+}
