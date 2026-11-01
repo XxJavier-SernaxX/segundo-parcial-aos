@@ -140,8 +140,23 @@ STORE_MASCOTAS = [
 # ENDPOINTS REST DE API 1
 # ==============================================================================
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+if os.path.exists(STATIC_DIR):
+    css_dir = os.path.join(STATIC_DIR, "css")
+    js_dir = os.path.join(STATIC_DIR, "js")
+    if os.path.exists(css_dir):
+        app.mount("/css", StaticFiles(directory=css_dir), name="css")
+    if os.path.exists(js_dir):
+        app.mount("/js", StaticFiles(directory=js_dir), name="js")
+
 @app.get("/", tags=["General"])
 def inicio():
+    index_file = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_file):
+        return FileResponse(index_file)
     return {
         "servicio": "API 1 · Servicio de Mascotas",
         "fundacion": "Huellas de Esperanza",
@@ -156,6 +171,7 @@ def health_check():
         "estado": "online",
         "fundacion": "Huellas de Esperanza"
     }
+
 
 
 @app.get("/mascotas", response_model=List[MascotaResponse], tags=["Mascotas"])
