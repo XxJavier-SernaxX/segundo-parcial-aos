@@ -516,43 +516,53 @@ def resolver_solicitud(id_solicitud: int, datos: SolicitudResolucion, request: R
             cursor = conexion.cursor()
             cursor.execute("SELECT id, mascota_id, solicitante_id, estado FROM adopciones.solicitudes WHERE id = %s;", (id_solicitud,))
             sol_db = cursor.fetchone()
-            if not sol_db:
-                raise HTTPException(status_code=404, detail=f"Solicitud con ID {id_solicitud} no encontrada.")
+            if sol_db:
+                mascota_id = sol_db[1]
 
-            mascota_id = sol_db[1]
-
-            if datos.estado == "aprobada":
-                # REGLA CRÍTICA: Exclusión mutua
-                cursor.execute(
-                    "SELECT id FROM adopciones.solicitudes WHERE mascota_id = %s AND estado = 'aprobada' AND id != %s;",
-                    (mascota_id, id_solicitud)
-                )
-                conflicto = cursor.fetchone()
-                if conflicto:
-                    raise HTTPException(
-                        status_code=status.HTTP_409_CONFLICT,
-                        detail=f"Conflicto de Adopción: La mascota con ID {mascota_id} ya tiene una solicitud aprobada previa (Solicitud #{conflicto[0]})."
+                if datos.estado == "aprobada":
+                    # REGLA CRÍTICA: Exclusión mutua
+                    cursor.execute(
+                        "SELECT id FROM adopciones.solicitudes WHERE mascota_id = %s AND estado = 'aprobada' AND id != %s;",
+                        (mascota_id, id_solicitud)
                     )
+                    conflicto = cursor.fetchone()
+                    if conflicto:
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Conflicto de Adopción: La mascota con ID {mascota_id} ya tiene una solicitud aprobada previa (Solicitud #{conflicto[0]})."
+                        )
 
-                # Notificar a API 1 y actualizar en Supabase
-                notificar_cambio_estado_mascota(mascota_id, "adoptada", motivo=f"Adopción aprobada mediante Solicitud #{id_solicitud}", request=request)
-                cursor.execute("UPDATE mascotas.mascotas SET estado = 'adoptada', fecha_actualizacion = now() WHERE id = %s;", (mascota_id,))
+                    # Notificar a API 1 y actualizar en Supabase
+                    notificar_cambio_estado_mascota(mascota_id, "adoptada", motivo=f"Adopción aprobada mediante Solicitud #{id_solicitud}", request=request)
+                    cursor.execute("UPDATE mascotas.mascotas SET estado = 'adoptada', fecha_actualizacion = now() WHERE id = %s;", (mascota_id,))
 
-            cursor.execute(
-                "UPDATE adopciones.solicitudes SET estado = %s, observaciones = %s, fecha_resolucion = now() WHERE id = %s RETURNING id, fecha_resolucion;",
-                (datos.estado, datos.observaciones or f"Solicitud {datos.estado} por la fundación.", id_solicitud)
-            )
-            conexion.commit()
+                cursor.execute(
+                    "UPDATE adopciones.solicitudes SET estado = %s, observaciones = %s, fecha_resolucion = now() WHERE id = %s RETURNING id, fecha_resolucion;",
+                    (datos.estado, datos.observaciones or f"Solicitud {datos.estado} por la fundación.", id_solicitud)
+                )
+                conexion.commit()
 
-            return {
-                "mensaje": f"Solicitud #{id_solicitud} {datos.estado} exitosamente en Supabase.",
-                "solicitud_id": id_solicitud,
-                "nuevo_estado": datos.estado,
-                "comunicacion_soa": {
-                    "regla_adopcion_unica_verificada": True,
-                    "notificacion_api1": "completada" if datos.estado == "aprobada" else "no_requerida"
+                # Mantener sincronizado almacén en memoria
+                sol_mem = next((s for s in STORE_SOLICITUDES if s["id"] == id_solicitud), None)
+                if sol_mem:
+                    sol_mem["estado"] = datos.estado
+                    sol_mem["observaciones"] = datos.observaciones
+
+                return {
+                    "mensaje": f"Solicitud #{id_solicitud} {datos.estado} exitosamente en Supabase.",
+                    "solicitud_id": id_solicitud,
+                    "solicitud": {
+                        "id": id_solicitud,
+                        "mascota_id": mascota_id,
+                        "estado": datos.estado,
+                        "observaciones": datos.observaciones
+                    },
+                    "nuevo_estado": datos.estado,
+                    "comunicacion_soa": {
+                        "regla_adopcion_unica_verificada": True,
+                        "notificacion_api1": "completada" if datos.estado == "aprobada" else "no_requerida"
+                    }
                 }
-            }
         except HTTPException:
             raise
         except Exception:
@@ -560,6 +570,7 @@ def resolver_solicitud(id_solicitud: int, datos: SolicitudResolucion, request: R
         finally:
             if cursor: cursor.close()
             conexion.close()
+
 
     # 2. Fallback en memoria
     solicitud = next((s for s in STORE_SOLICITUDES if s["id"] == id_solicitud), None)
