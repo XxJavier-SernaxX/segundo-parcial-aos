@@ -1,6 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
+    "frontend": {
+      "root": "public",
+      "framework": "other"
+    },
     "api-adopciones": {
       "root": "api-adopciones",
       "framework": "fastapi",
@@ -20,19 +24,13 @@
   },
   "rewrites": [
     {
-      "source": "/mascotas",
-      "destination": {
-        "service": "api-mascotas"
-      }
-    },
-    {
       "source": "/mascotas/(.*)",
       "destination": {
         "service": "api-mascotas"
       }
     },
     {
-      "source": "/api/v1/mascotas",
+      "source": "/mascotas",
       "destination": {
         "service": "api-mascotas"
       }
@@ -44,13 +42,25 @@
       }
     },
     {
+      "source": "/api/v1/mascotas",
+      "destination": {
+        "service": "api-mascotas"
+      }
+    },
+    {
+      "source": "/solicitudes/(.*)",
+      "destination": {
+        "service": "api-adopciones"
+      }
+    },
+    {
       "source": "/solicitudes",
       "destination": {
         "service": "api-adopciones"
       }
     },
     {
-      "source": "/solicitudes/(.*)",
+      "source": "/api/v1/adopciones/(.*)",
       "destination": {
         "service": "api-adopciones"
       }
@@ -62,9 +72,9 @@
       }
     },
     {
-      "source": "/api/v1/adopciones/(.*)",
+      "source": "/(.*)",
       "destination": {
-        "service": "api-adopciones"
+        "service": "frontend"
       }
     }
   ]

@@ -12,9 +12,12 @@ def obtener_conexion():
     """
     host = os.getenv("DB_HOST", "localhost")
     database = os.getenv("DB_NAME", "postgres")
+    if database == "post":
+        database = "postgres"
     user = os.getenv("DB_USER", "postgres")
     password = os.getenv("DB_PASSWORD", "")
     port = os.getenv("DB_PORT", "5432")
+
 
     if not password and host == "localhost":
         # Modo fallback a memoria si no hay PostgreSQL local corriendo
